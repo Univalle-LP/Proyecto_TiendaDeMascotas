@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | Adonai{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="h3">Checkout</h1>
+  <p>Aquí revisarás tu pedido y completarás la compra.</p>
+  <div id="checkout-cart"></div>
+  <!-- Redirigir al checkout de Stripe implementado en la app `pagos` -->
+  <a href="{% url 'pagos:checkout' %}" class="btn btn-success">Pagar ahora</a>
+</div>
+
+<script>
+// Mostrar el carrito almacenado en localStorage para revisión antes del pago
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+const container = document.getElementById('checkout-cart');
+if (cart.length === 0) {
+  container.innerHTML = '<p>No hay productos en el carrito.</p>';
+} else {
+  let html = '<ul class="list-group">';
+  cart.forEach(item => {
+    html += `<li class="list-group-item">${item.nombre} - Bs. ${item.precio} x ${item.cantidad}</li>`;
+  });
+  html += '</ul>';
+  container.innerHTML = html;
+}
+
+// Redirigir directamente a la URL de Stripe al presionar "Pagar ahora"
+//document.querySelector('.btn-success').addEventListener('click', (event) => {
+  //event.preventDefault();
+  //window.location.href = 'https://checkout.stripe.com/c/pay/cs_test_a1DzzO4lW2iIVlDdi88rEk1sPBoiHyNigNx6AZv9J8IdAJJF2T7eDJpUBD#fidkdWxOYHwnPyd1blpxYHZxWjA0VlRMXHxENW9JdjA9UFVhdUhwdnA9MWpVZn90T3xIS2xkfDw9fE5TRDFGalBQNG1rUj1jVExIUzFURGtqaDBdNmNVcG58UDVcT1NQcktncWMzR04wdkx8NTVGYElsSkxkfScpJ2hsYXYnP34nYnBsYSc%2FJzwxYDBmNDZnKGE9NzMoMWMyPCg8YTNkKDRhY2BjMDRjZmBhMjxnZzBjMScpJ2hwbGEnPydnYDU1YWRjPCg1MWAyKDE3NjMoZDUzMigzYDxkZGdnYTU9NGNgNDQ3MmQnKSd2bGEnPydnNzYwNDwwZihhZmEzKDEwZmMoPDVkYyhmMzU9YTNmZmMyN2MzPTVgMzIneCknZ2BxZHYnP15YKSdpZHxqcHFRfHVgJz8ndmxrYmlgWmxxYGgnKSd3YGNgd3dgd0p3bGJsayc%2FJ21xcXU%2FKio0NzIrNSs1KzQ%2FPTU1NSd4JSUl';
+//});
+</script>
+{% endblock %}
