@@ -2,6 +2,13 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+dotenv_path = Path(__file__).resolve().parent / '.env'
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
 
 
 def main():
