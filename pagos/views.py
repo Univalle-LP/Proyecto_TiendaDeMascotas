@@ -3,6 +3,7 @@ from django.conf import settings
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+import logging
 import stripe
 import json
 import io
@@ -12,6 +13,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from .models import Payment
 from productos.models import Producto, Inventario
 from ventas.models import Venta, VentaDetalle
+logger = logging.getLogger(__name__)
 
 # Intentar importar reportlab
 try:
@@ -34,8 +36,7 @@ def create_venta_from_stripe_session(session_id, amount_bob, usuario=None):
     """
     stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
     
-    print(f"[CREATE VENTA] Iniciando creación de venta para session: {session_id}")
-    
+    logger.info(f"[CREATE VENTA] Iniciando creación de venta para session: {session_id}")
     try:
         # Obtener la sesión de Stripe
         stripe_session = stripe.checkout.Session.retrieve(session_id)
@@ -45,12 +46,11 @@ def create_venta_from_stripe_session(session_id, amount_bob, usuario=None):
         if stripe_session.get('metadata', {}).get('cart_items'):
             try:
                 cart_items = json.loads(stripe_session['metadata']['cart_items'])
-                print(f"[CREATE VENTA] Items encontrados: {len(cart_items)} items")
+                logger.info(f"[CREATE VENTA] Items encontrados: {len(cart_items)} items")
             except Exception as e:
-                print(f"[CREATE VENTA] Error parseando metadatos: {e}")
-        
+                logger.error(f"[CREATE VENTA] Error parseando metadatos: {e}")
         if not cart_items:
-            print(f"[CREATE VENTA] No hay items para crear venta")
+            logger.error(f"[CREATE VENTA] No hay items para crear venta")
             return None
         
         # Si no se pasó usuario, intentar obtenerlo por email de Stripe
@@ -63,10 +63,10 @@ def create_venta_from_stripe_session(session_id, amount_bob, usuario=None):
                 try:
                     # Intentar obtener usuario existente por email
                     usuario = UsuarioModel.objects.get(email=customer_email)
-                    print(f"[CREATE VENTA] Usuario encontrado: {usuario.nombre}")
+                    logger.info(f"[CREATE VENTA] Usuario encontrado: {usuario.nombre}")
                 except UsuarioModel.DoesNotExist:
                     # Crear usuario automático si no existe
-                    print(f"[CREATE VENTA] Creando usuario automático para: {customer_email}")
+                    logger.info(f"[CREATE VENTA] Creando usuario automático para: {customer_email}")
                     try:
                         # Obtener rol Cliente (o crear si no existe)
                         rol_cliente, _ = Rol.objects.get_or_create(nombre='Cliente')
@@ -79,9 +79,9 @@ def create_venta_from_stripe_session(session_id, amount_bob, usuario=None):
                             rol=rol_cliente,
                             is_active=True
                         )
-                        print(f"[CREATE VENTA] Usuario creado automáticamente: {usuario.nombre} ({usuario.email})")
+                        logger.info(f"[CREATE VENTA] Usuario creado automáticamente: {usuario.nombre} ({usuario.email})")
                     except Exception as e:
-                        print(f"[CREATE VENTA] Error creando usuario automático: {e}")
+                        logger.error(f"[CREATE VENTA] Error creando usuario automático: {e}")
                         usuario = None
         
         # Crear la Venta (con o sin usuario)
@@ -95,8 +95,7 @@ def create_venta_from_stripe_session(session_id, amount_bob, usuario=None):
             creado_en=timezone.now()
         )
         
-        print(f"[CREATE VENTA] Venta creada: ID={venta.id}, Total={total_venta}, Usuario={usuario.nombre if usuario else 'Anónimo'}")
-        
+        logger.info(f"[CREATE VENTA] Venta creada: ID={venta.id}, Total={total_venta}, Usuario={usuario.nombre if usuario else 'Anónimo'}")
         # Crear VentaDetalle para cada item
         for item in cart_items:
             try:
@@ -122,19 +121,18 @@ def create_venta_from_stripe_session(session_id, amount_bob, usuario=None):
                         precio_unitario=price,
                         subtotal=subtotal
                     )
-                    print(f"[CREATE VENTA] Detalle creado: {producto.nombre} x{quantity} = {subtotal}")
+                    logger.info(f"[CREATE VENTA] Detalle creado: {producto.nombre} x{quantity} = {subtotal}")
                 else:
-                    print(f"[CREATE VENTA] Producto no encontrado: {product_name}")
+                    logger.error(f"[CREATE VENTA] Producto no encontrado: {product_name}")
             except Exception as e:
-                print(f"[CREATE VENTA] Error creando detalle: {e}")
-        
-        print(f"[CREATE VENTA] Venta registrada exitosamente: {venta.id}")
+                logger.error(f"[CREATE VENTA] Error creando detalle: {e}")
+        logger.info(f"[CREATE VENTA] Venta registrada exitosamente: {venta.id}")
         return venta
         
     except Exception as e:
-        print(f"[CREATE VENTA] Error en create_venta_from_stripe_session: {e}")
+        logger.error(f"[CREATE VENTA] Error en create_venta_from_stripe_session: {e}")
         import traceback
-        traceback.print_exc()
+        logger.exception("Exception trace")
         return None
 
 
@@ -146,8 +144,7 @@ def process_payment_stock(session_id, data_object):
     """
     stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
     
-    print(f"[WEBHOOK STOCK] Iniciando procesamiento de stock para session: {session_id}")
-    
+    logger.info(f"[WEBHOOK STOCK] Iniciando procesamiento de stock para session: {session_id}")
     try:
         # Obtener la sesión de Stripe
         stripe_session = stripe.checkout.Session.retrieve(session_id)
@@ -157,13 +154,12 @@ def process_payment_stock(session_id, data_object):
         if stripe_session.get('metadata', {}).get('cart_items'):
             try:
                 cart_items = json.loads(stripe_session['metadata']['cart_items'])
-                print(f"[WEBHOOK STOCK] Items encontrados en metadatos: {len(cart_items)} items")
+                logger.info(f"[WEBHOOK STOCK] Items encontrados en metadatos: {len(cart_items)} items")
             except Exception as e:
-                print(f"[WEBHOOK STOCK] Error parseando metadatos: {e}")
-        
+                logger.error(f"[WEBHOOK STOCK] Error parseando metadatos: {e}")
         # Si no hay metadatos, intentar procesar desde los line items
         if not cart_items:
-            print("[WEBHOOK STOCK] Intentando obtener items desde Stripe")
+            logger.info("[WEBHOOK STOCK] Intentando obtener items desde Stripe")
             try:
                 li = stripe.checkout.Session.list_line_items(session_id)
                 for item in li.data:
@@ -172,12 +168,11 @@ def process_payment_stock(session_id, data_object):
                         'quantity': getattr(item, 'quantity', 1),
                         'nombre': item.description or 'Producto desconocido'
                     })
-                print(f"[WEBHOOK STOCK] Items obtenidos desde Stripe: {len(cart_items)} items")
+                logger.info(f"[WEBHOOK STOCK] Items obtenidos desde Stripe: {len(cart_items)} items")
             except Exception as e:
-                print(f"[WEBHOOK STOCK] Error obteniendo items: {e}")
-        
+                logger.error(f"[WEBHOOK STOCK] Error obteniendo items: {e}")
         if not cart_items:
-            print(f"[WEBHOOK STOCK] No hay items para procesar")
+            logger.error(f"[WEBHOOK STOCK] No hay items para procesar")
             return
         
         # Procesar cada item: reducir stock y registrar en Inventario
@@ -187,8 +182,7 @@ def process_payment_stock(session_id, data_object):
                 quantity = item.get('cantidad') or item.get('quantity', 1)
                 product_name = item.get('nombre') or item.get('name')
                 
-                print(f"[WEBHOOK STOCK] Procesando: ID={product_id}, Nombre={product_name}, Cantidad={quantity}")
-                
+                logger.info(f"[WEBHOOK STOCK] Procesando: ID={product_id}, Nombre={product_name}, Cantidad={quantity}")
                 # Si no tenemos ID del producto, intentar encontrarlo por nombre
                 if not product_id:
                     producto = Producto.objects.filter(nombre__icontains=product_name).first()
@@ -201,8 +195,7 @@ def process_payment_stock(session_id, data_object):
                     producto.stock_actual = max(0, producto.stock_actual - quantity)
                     producto.save(update_fields=['stock_actual'])
                     
-                    print(f"[WEBHOOK STOCK] {producto.nombre}: {stock_anterior} -> {producto.stock_actual}")
-                    
+                    logger.info(f"[WEBHOOK STOCK] {producto.nombre}: {stock_anterior} -> {producto.stock_actual}")
                     # Registrar el movimiento en Inventario
                     Inventario.objects.create(
                         producto=producto,
@@ -212,17 +205,17 @@ def process_payment_stock(session_id, data_object):
                         referencia=session_id,
                         usuario=None  # Sistema automático
                     )
-                    print(f"[WEBHOOK STOCK] Inventario registrado para {producto.nombre}")
+                    logger.info(f"[WEBHOOK STOCK] Inventario registrado para {producto.nombre}")
                 else:
-                    print(f"[WEBHOOK STOCK] Producto no encontrado: ID={product_id}, Nombre={product_name}")
+                    logger.error(f"[WEBHOOK STOCK] Producto no encontrado: ID={product_id}, Nombre={product_name}")
             except Producto.DoesNotExist:
-                print(f"[WEBHOOK STOCK] Producto con ID {product_id} no existe")
+                logger.error(f"[WEBHOOK STOCK] Producto con ID {product_id} no existe")
             except Exception as e:
-                print(f"[WEBHOOK STOCK] Error procesando item: {e}")
+                logger.error(f"[WEBHOOK STOCK] Error procesando item: {e}")
                 pass
     
     except Exception as e:
-        print(f"[WEBHOOK STOCK] Error en process_payment_stock: {e}")
+        logger.error(f"[WEBHOOK STOCK] Error en process_payment_stock: {e}")
         pass
 
 
@@ -250,12 +243,11 @@ def create_checkout_session(request):
     amount_bob = payload.get('amount_bob')
     cart_items = payload.get('cart_items', [])
     
-    print(f"[CREATE SESSION] Creando sesión de checkout")
-    print(f"[CREATE SESSION] Monto: {amount_bob} BOB")
-    print(f"[CREATE SESSION] Items en carrito: {len(cart_items)}")
+    logger.info(f"[CREATE SESSION] Creando sesión de checkout")
+    logger.info(f"[CREATE SESSION] Monto: {amount_bob} BOB")
+    logger.info(f"[CREATE SESSION] Items en carrito: {len(cart_items)}")
     if cart_items:
-        print(f"[CREATE SESSION] Primer item: {cart_items[0]}")
-    
+        logger.info(f"[CREATE SESSION] Primer item: {cart_items[0]}")
     try:
         amount_bob = Decimal(str(amount_bob)) if amount_bob is not None else None
     except (ValueError, TypeError):
@@ -275,8 +267,7 @@ def create_checkout_session(request):
         
         # Serializar los items para guardar en metadatos
         cart_items_json = json.dumps(cart_items)
-        print(f"[CREATE SESSION] JSON a enviar: {cart_items_json[:200]}...")
-        
+        logger.info(f"[CREATE SESSION] JSON a enviar: {cart_items_json[:200]}...")
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -295,8 +286,7 @@ def create_checkout_session(request):
             }
         )
 
-        print(f"[CREATE SESSION] Sesión creada: {session.id}")
-
+        logger.info(f"[CREATE SESSION] Sesión creada: {session.id}")
         try:
             Payment.objects.create(
                 stripe_session_id=session.id,
@@ -305,12 +295,12 @@ def create_checkout_session(request):
                 status='created'
             )
         except Exception as e:
-            print(f"[CREATE SESSION] Error creando Payment: {e}")
+            logger.error(f"[CREATE SESSION] Error creando Payment: {e}")
             pass
 
         return JsonResponse({'id': session.id})
     except Exception as e:
-        print(f"[CREATE SESSION] Error creando sesión Stripe: {e}")
+        logger.error(f"[CREATE SESSION] Error creando sesión Stripe: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -330,12 +320,11 @@ def process_payment_stock_from_session(session_id):
         if stripe_session.get('metadata', {}).get('cart_items'):
             try:
                 cart_items = json.loads(stripe_session['metadata']['cart_items'])
-                print(f"[STOCK] Items encontrados en metadatos: {len(cart_items)} items")
+                logger.info(f"[STOCK] Items encontrados en metadatos: {len(cart_items)} items")
             except Exception as e:
-                print(f"[STOCK] Error parseando metadatos: {e}")
-        
+                logger.error(f"[STOCK] Error parseando metadatos: {e}")
         if not cart_items:
-            print(f"[STOCK] No hay items en metadatos para session {session_id}")
+            logger.error(f"[STOCK] No hay items en metadatos para session {session_id}")
             return
         
         # Procesar cada item: reducir stock y registrar en Inventario
@@ -345,10 +334,9 @@ def process_payment_stock_from_session(session_id):
                 quantity = item.get('cantidad') or item.get('quantity', 1)
                 product_name = item.get('nombre') or item.get('name')
                 
-                print(f"[STOCK] Procesando: ID={product_id}, Nombre={product_name}, Cantidad={quantity}")
-                
+                logger.info(f"[STOCK] Procesando: ID={product_id}, Nombre={product_name}, Cantidad={quantity}")
                 if not product_id:
-                    print(f"[STOCK] Sin ID, buscando por nombre: {product_name}")
+                    logger.warning(f"[STOCK] Sin ID, buscando por nombre: {product_name}")
                     producto = Producto.objects.filter(nombre__icontains=product_name).first()
                 else:
                     producto = Producto.objects.get(id=product_id)
@@ -361,8 +349,7 @@ def process_payment_stock_from_session(session_id):
                     producto.stock_actual = max(0, producto.stock_actual - quantity)
                     producto.save(update_fields=['stock_actual'])
                     
-                    print(f"[STOCK] {producto.nombre}: {stock_anterior} -> {producto.stock_actual}")
-                    
+                    logger.info(f"[STOCK] {producto.nombre}: {stock_anterior} -> {producto.stock_actual}")
                     # Registrar el movimiento en Inventario
                     Inventario.objects.create(
                         producto=producto,
@@ -372,17 +359,17 @@ def process_payment_stock_from_session(session_id):
                         referencia=session_id,
                         usuario=None  # Sistema automático
                     )
-                    print(f"[STOCK] Inventario registrado para {producto.nombre}")
+                    logger.info(f"[STOCK] Inventario registrado para {producto.nombre}")
                 else:
-                    print(f"[STOCK] Producto no encontrado: ID={product_id}, Nombre={product_name}")
+                    logger.error(f"[STOCK] Producto no encontrado: ID={product_id}, Nombre={product_name}")
             except Producto.DoesNotExist:
-                print(f"[STOCK] Producto con ID {product_id} no existe")
+                logger.error(f"[STOCK] Producto con ID {product_id} no existe")
             except Exception as e:
-                print(f"[STOCK] Error procesando item: {e}")
+                logger.error(f"[STOCK] Error procesando item: {e}")
                 pass
     
     except Exception as e:
-        print(f"[STOCK] Error en process_payment_stock_from_session: {e}")
+        logger.error(f"[STOCK] Error en process_payment_stock_from_session: {e}")
         pass
 
 
@@ -391,7 +378,7 @@ def pago_exito(request):
     
     # Procesar el stock y crear venta cuando el usuario llega a la página de éxito
     if session_id:
-        print(f"[EXITO] Procesando pago exitoso para session: {session_id}")
+        logger.info(f"[EXITO] Procesando pago exitoso para session: {session_id}")
         # Procesar stock
         process_payment_stock_from_session(session_id)
         
@@ -410,13 +397,11 @@ def pago_exito(request):
                     from usuarios.models import Usuario as UsuarioModel
                     usuario_autenticado = UsuarioModel.objects.get(email__iexact=request.user.email)
                 except Exception as e:
-                    print(f"[EXITO] Error obteniendo usuario autenticado: {e}")
-            
+                    logger.error(f"[EXITO] Error obteniendo usuario autenticado: {e}")
             # Crear venta pasando el usuario autenticado
             create_venta_from_stripe_session(session_id, amount_bob, usuario=usuario_autenticado)
         except Exception as e:
-            print(f"[EXITO] Error creando venta: {e}")
-    
+            logger.error(f"[EXITO] Error creando venta: {e}")
     return render(request, 'pagos/exito.html', {'session_id': session_id})
 
 
@@ -463,7 +448,7 @@ def stripe_webhook(request):
                         amount_bob = Decimal(str(amount_bob)) / 100  # Convertir de centavos
                     create_venta_from_stripe_session(session_id, amount_bob, usuario=None)
                 except Exception as e:
-                    print(f"[WEBHOOK VENTA] Error creando venta: {e}")
+                    logger.error(f"[WEBHOOK VENTA] Error creando venta: {e}")
             except Payment.DoesNotExist:
                 try:
                     Payment.objects.create(
@@ -483,7 +468,7 @@ def stripe_webhook(request):
                             amount_bob = Decimal(str(amount_bob)) / 100  # Convertir de centavos
                         create_venta_from_stripe_session(session_id, amount_bob, usuario=None)
                     except Exception as e:
-                        print(f"[WEBHOOK VENTA] Error creando venta: {e}")
+                        logger.error(f"[WEBHOOK VENTA] Error creando venta: {e}")
                 except Exception:
                     pass
 
