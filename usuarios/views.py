@@ -17,6 +17,7 @@ from django.db import models
 
 from .models import Usuario
 from .forms import UsuarioForm, PasswordChangeForm, ClientePasswordChangeForm
+from .serializers import UsuarioSerializer
 
 
 # ======================
@@ -166,6 +167,20 @@ def perfil(request):
         form = UsuarioForm(instance=usuario or None)
 
     return render(request, 'usuarios/perfil.html', {'form': form, 'usuario_obj': usuario})
+
+
+# ======================
+# PERFIL JSON DEL USUARIO AUTENTICADO
+# ======================
+@login_required
+def user_profile_json(request):
+    try:
+        usuario = Usuario.objects.get(email__iexact=request.user.email)
+    except Usuario.DoesNotExist:
+        return JsonResponse({'detail': 'Usuario no encontrado.'}, status=404)
+
+    serializer = UsuarioSerializer(usuario)
+    return JsonResponse(serializer.to_representation())
 
 
 # ======================
