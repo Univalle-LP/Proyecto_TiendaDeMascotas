@@ -22,6 +22,7 @@ class PromotionForm(ModelForm):
 
 MAX_IMG_MB = 2
 ALLOWED_IMG_TYPES = {"image/jpeg", "image/png", "image/webp"}
+ALLOWED_IMG_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -67,13 +68,22 @@ class ProductoForm(forms.ModelForm):
         img = self.cleaned_data.get("imagen")
         if not img:
             return img  # opcional (permitir sin imagen)
-        # tipo mime
-        if getattr(img, "content_type", None) not in ALLOWED_IMG_TYPES:
-            raise ValidationError("Solo se permiten imágenes JPG/PNG/WEBP.")
-        # tamaño
+
+        filename = getattr(img, 'name', '') or ''
+        extension = filename.lower().rsplit('.', 1)[-1] if '.' in filename else ''
+        extension = f'.{extension}' if extension else ''
+
+        if extension not in ALLOWED_IMG_EXTENSIONS:
+            raise ValidationError("Formato de archivo no válido. Sólo se permiten: JPG, JPEG, PNG y WEBP.")
+
+        content_type = getattr(img, "content_type", None)
+        if content_type not in ALLOWED_IMG_TYPES:
+            raise ValidationError("Tipo de imagen no válido. Sólo se permiten imágenes JPG, PNG o WEBP.")
+
         size_mb = img.size / (1024 * 1024)
         if size_mb > MAX_IMG_MB:
-            raise ValidationError(f"La imagen supera {MAX_IMG_MB} MB.")
+            raise ValidationError(f"La imagen es demasiado grande. El tamaño máximo permitido es {MAX_IMG_MB} MB.")
+
         return img
 
     def clean(self):
