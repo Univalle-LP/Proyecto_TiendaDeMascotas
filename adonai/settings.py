@@ -5,10 +5,10 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # === Seguridad / Debug (solo dev) ===
-SECRET_KEY = 'django-insecure-kfxcl-@8q4l=r8!c-)rb20w+cp&&8m&suw-$c^1=^fo+ar47)-'
-DEBUG = True  # Durante desarrollo activa el modo DEBUG para servir media estático. Cambiar a False en producción
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me')
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Activar DEBUG solo cuando DEBUG sea 'True' en las variables de entorno
 # En desarrollo permitir hosts locales y 'testserver' para las pruebas con Client()
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']  # Aquí puedes agregar los dominios permitidos cuando esté en producción
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost,testserver').split(',')  # Dirección host permitida en producción
 
 # === Apps ===
 INSTALLED_APPS = [
@@ -125,8 +125,10 @@ AUTHENTICATION_BACKENDS = [
 
 # --- Configuración adicional de seguridad ---
 SECURE_SSL_REDIRECT = False  # En desarrollo, debe estar en False. En producción, ponlo en True si usas HTTPS
-CSRF_COOKIE_SECURE = False  # En desarrollo, debe estar en False. En producción, ponlo en True si usas HTTPS
-SESSION_COOKIE_SECURE = False  # En desarrollo, debe estar en False. En producción, ponlo en True si usas HTTPS
+CSRF_COOKIE_SECURE = not DEBUG  # Solo seguro cuando DEBUG está deshabilitado
+SESSION_COOKIE_SECURE = not DEBUG  # Solo seguro cuando DEBUG está deshabilitado
+SESSION_COOKIE_HTTPONLY = True  # Evita acceso JavaScript a la cookie de sesión
+SESSION_COOKIE_SAMESITE = 'Lax'  # Protege contra CSRF en enlaces externos
 
 # --- Bloqueo de intentos fallidos (opcional) --- 
 # Implementar un bloqueo de 30 segundos después de 3 intentos fallidos
