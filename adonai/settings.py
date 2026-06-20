@@ -7,6 +7,12 @@ dotenv_path = Path(__file__).resolve().parent.parent / '.env'
 if dotenv_path.exists():
     load_dotenv(dotenv_path)
 
+# Cargar variables de entorno desde .env
+from dotenv import load_dotenv
+dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
+
 # === Paths ===
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,7 +42,7 @@ INSTALLED_APPS = [
     'core',
     'roles',  # Agregar la app de roles
     'pagos',
-    'auditoria',
+    'auditoria',  # Sistema de auditoría para registrar acciones de usuarios
     'django.contrib.sites',
 ]
 

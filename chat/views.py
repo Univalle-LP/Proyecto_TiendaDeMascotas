@@ -16,9 +16,9 @@ from ventas.models import VentaDetalle  # Asume que este modelo está definido
 
 # Auditoría
 try:
-    from auditoria.utils import registrar_auditoria_actualizar
+    from auditoria.utils import registrar_auditoria_crear
 except ImportError:
-    registrar_auditoria_actualizar = None
+    registrar_auditoria_crear = None
 
 # Gemini 2.5 imports
 try:
@@ -206,6 +206,17 @@ def chat_send(request):
                     prioridad=1,
                     llegada=timezone.now()
                 )
+                # 📝 Registrar creación de chat en auditoría
+                if registrar_auditoria_crear:
+                    try:
+                        registrar_auditoria_crear(
+                            usuario=user,
+                            entidad='Solicitud (Chat)',
+                            nombre_objeto=f'Chat #{chat.id}',
+                            detalles=f'Estado: {chat.estado}, Prioridad: {chat.prioridad}'
+                        )
+                    except Exception as e:
+                        logger.error(f"Error registrando auditoría de chat: {e}")
             logger.debug(f"Chat obtenido/creado: {chat.id}, Estado: {chat.estado}")
         except Usuario.DoesNotExist:
             logger.error(f"Usuario {usuario_id} no encontrado")
@@ -492,6 +503,17 @@ def chat_personalizado(request):
             prioridad=prioridad,
             llegada=timezone.now()
         )
+        # 📝 Registrar creación de chat personalizado en auditoría
+        if registrar_auditoria_crear:
+            try:
+                registrar_auditoria_crear(
+                    usuario=user,
+                    entidad='Solicitud (Chat Personalizado)',
+                    nombre_objeto=f'Chat #{chat.id}',
+                    detalles=f'Estado: {chat.estado}, Prioridad: {prioridad}'
+                )
+            except Exception as e:
+                logger.error(f"Error registrando auditoría de chat personalizado: {e}")
         nueva_entrada = True
 
     # Guardar mensaje del usuario
