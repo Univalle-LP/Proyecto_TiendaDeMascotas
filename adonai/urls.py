@@ -27,6 +27,8 @@ urlpatterns = [
     path('carrito/', include('carrito.urls')),
     # Endpoints del chat (widget)
     path('chat/', include('chat.urls')),
+    # Ventas API
+    path('', include(('ventas.urls', 'ventas'))),
     # Pagos (Stripe)
     path('', include(('pagos.urls', 'pagos'), namespace='pagos')),
 
