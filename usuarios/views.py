@@ -20,6 +20,14 @@ from .models import Usuario
 from .forms import UsuarioForm, PasswordChangeForm, ClientePasswordChangeForm
 from .serializers import UsuarioSerializer
 
+# Importar utilidades de auditoría
+try:
+    from auditoria.utils import registrar_auditoria_login, registrar_auditoria_logout, registrar_auditoria_error
+except ImportError:
+    registrar_auditoria_login = None
+    registrar_auditoria_logout = None
+    registrar_auditoria_error = None
+
 
 # ======================
 # FORMULARIO DE REGISTRO
@@ -120,6 +128,16 @@ def custom_login(request):
             request.session['failed_attempts'] = 0
             request.session['last_failed_time'] = None
 
+            # 📝 Registrar login en auditoría
+            if registrar_auditoria_login:
+                try:
+                    usuario_custom = Usuario.objects.filter(email__iexact=user.email).first()
+                    if usuario_custom:
+                        registrar_auditoria_login(usuario_custom)
+                except Exception as e:
+                    # No interrumpir el flujo si falla la auditoría
+                    print(f"Error registrando auditoría de login: {e}")
+
             next_url = request.POST.get('next') or request.GET.get('next')
             if next_url and url_has_allowed_host_and_scheme(next_url, {request.get_host()}):
                 return redirect(next_url)
@@ -138,6 +156,19 @@ def custom_login(request):
         messages.error(request, "Credenciales incorrectas.")
         request.session['failed_attempts'] = failed_attempts + 1
         request.session['last_failed_time'] = timezone.now().isoformat()
+
+        # 📝 Registrar intento fallido en auditoría
+        if registrar_auditoria_error:
+            try:
+                registrar_auditoria_error(
+                    usuario=None,  # Usuario desconocido en fallo de autenticación
+                    entidad='Sesión',
+                    error_msg='Intento de login con credenciales incorrectas',
+                    detalles=f'Usuario: {username}'
+                )
+            except Exception as e:
+                # No interrumpir el flujo si falla la auditoría
+                print(f"Error registrando fallo de auditoría: {e}")
 
     return render(request, 'usuarios/login.html')
 
@@ -283,6 +314,16 @@ def cambiar_contrasena_cliente(request):
 @login_required
 def custom_logout(request):
     """Cierra la sesión completamente y redirige a inicio."""
+    # 📝 Registrar logout en auditoría ANTES de cerrar sesión
+    if registrar_auditoria_logout:
+        try:
+            usuario = Usuario.objects.filter(email__iexact=request.user.email).first()
+            if usuario:
+                registrar_auditoria_logout(usuario)
+        except Exception as e:
+            # No interrumpir el flujo si falla la auditoría
+            print(f"Error registrando auditoría de logout: {e}")
+    
     logout(request)
     messages.success(request, "Has cerrado sesión correctamente.")
     return redirect('inicio')

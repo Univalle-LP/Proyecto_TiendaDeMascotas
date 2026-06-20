@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'core',
     'roles',  # Agregar la app de roles
     'pagos',
+    'auditoria',  # Sistema de auditoría para registrar acciones de usuarios
     'django.contrib.sites',
 ]
 
