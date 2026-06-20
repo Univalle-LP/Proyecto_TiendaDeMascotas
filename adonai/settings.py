@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-kfxcl-@8q4l=r8!c-)rb20w+cp&&8m&suw-$c^1=^fo+ar47)-'
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Activar DEBUG solo cuando la variable de entorno DEBUG sea 'True'
 # En desarrollo permitir hosts locales y 'testserver' para las pruebas con Client()
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']  # Aquí puedes agregar los dominios permitidos cuando esté en producción
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost,testserver').split(',')
 
 # === Apps ===
 INSTALLED_APPS = [
@@ -74,12 +74,12 @@ WSGI_APPLICATION = 'adonai.wsgi.application'
 # === Base de datos ===
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'adonai_store',  # Nombre de la base de datos
-        'USER': 'root',  # Usuario para la base de datos
-        'PASSWORD': '123456',  # Contraseña de la base de datos
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.environ.get('DB_NAME', 'adonai_store'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
     }
 }
 
@@ -138,6 +138,12 @@ SESSION_COOKIE_AGE = 86400  # La sesión expirará después de 24 horas (en segu
 
 # Expirar la sesión al cerrar el navegador (útil en desarrollo para no mantener login persistente)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# === Stripe (configurable por variables de entorno) ===
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_BOB_TO_USD_RATE = float(os.environ.get('STRIPE_BOB_TO_USD_RATE', '0.145'))
 
 # === Email (configurable por variables de entorno) ===
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')

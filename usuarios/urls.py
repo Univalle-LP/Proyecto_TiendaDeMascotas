@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Ruta para el perfil del usuario
     path("perfil/", views.perfil, name="perfil"),
+    path("api/profile/", views.user_profile_json, name="user_profile_json"),
 
     # Ruta para cambiar contraseña desde el perfil (cliente)
     path("cambiar-contrasena/", views.cambiar_contrasena_cliente, name="cambiar_contrasena"),
