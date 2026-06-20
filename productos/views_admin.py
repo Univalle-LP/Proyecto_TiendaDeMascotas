@@ -10,6 +10,12 @@ from datetime import datetime, timedelta
 from .models import Producto, Categoria, Promocion, Promotion
 from .forms import ProductoForm, CategoriaForm
 from usuarios.decorators import group_required
+
+# Auditoría
+try:
+    from auditoria.utils import registrar_auditoria_crear
+except ImportError:
+    registrar_auditoria_crear = None
 # productos/views_admin.py
 from .forms import ProductoForm, CategoriaForm
 from usuarios.models import Usuario, Rol
@@ -242,6 +248,20 @@ def producto_create(request):
         form = ProductoForm(request.POST, request.FILES)
         if form.is_valid():
             p = form.save()
+            # 📝 Registrar creación en auditoría
+            if registrar_auditoria_crear:
+                try:
+                    from usuarios.models import Usuario
+                    usuario = Usuario.objects.filter(email__iexact=request.user.email).first()
+                    if usuario:
+                        registrar_auditoria_crear(
+                            usuario=usuario,
+                            entidad='Producto',
+                            nombre_objeto=p.nombre,
+                            detalles=f'ID: {p.id}, Precio: ${p.precio}'
+                        )
+                except Exception as e:
+                    print(f"Error registrando auditoría de producto: {e}")
             if p.imagen:
                 messages.success(request, f"Producto «{p.nombre}» creado. Imagen guardada: {p.imagen.name}")
             else:
@@ -299,7 +319,21 @@ def categoria_create(request):
         form = CategoriaForm(request.POST)
         if form.is_valid():
             c = form.save()
-            messages.success(request, f"Categoría «{c.nombre}» creada.")
+            # 📝 Registrar creación en auditoría
+            if registrar_auditoria_crear:
+                try:
+                    from usuarios.models import Usuario
+                    usuario = Usuario.objects.filter(email__iexact=request.user.email).first()
+                    if usuario:
+                        registrar_auditoria_crear(
+                            usuario=usuario,
+                            entidad='Categoría',
+                            nombre_objeto=c.nombre,
+                            detalles=f'ID: {c.id}'
+                        )
+                except Exception as e:
+                    print(f"Error registrando auditoría de categoría: {e}")
+            messages.success(request, f"Categoría «{c.nombre}" creada.")
             return redirect("panel:categoria_list")
         messages.error(request, "Corrige los errores del formulario.")
     else:
@@ -609,6 +643,17 @@ def empleado_create(request):
                 usuario.password = make_password(raw_pw)
                 try:
                     usuario.save()
+                    # 📝 Registrar creación en auditoría
+                    if registrar_auditoria_crear:
+                        try:
+                            registrar_auditoria_crear(
+                                usuario=request.user if hasattr(request.user, 'usuario_set') else None,
+                                entidad='Usuario (Empleado)',
+                                nombre_objeto=usuario.nombre,
+                                detalles=f'Email: {usuario.email}, Username: {username}'
+                            )
+                        except Exception as ae:
+                            print(f"Error registrando auditoría de empleado: {ae}")
                 except IntegrityError:
                     form.add_error('email', 'Ya existe un usuario con este correo.')
                     messages.error(request, 'Ya existe un usuario con este correo.')

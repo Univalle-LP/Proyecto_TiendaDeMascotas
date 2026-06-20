@@ -20,6 +20,12 @@ from .models import Usuario
 from .forms import UsuarioForm, PasswordChangeForm, ClientePasswordChangeForm
 from .serializers import UsuarioSerializer
 
+# Auditoría
+try:
+    from auditoria.utils import registrar_auditoria_crear
+except ImportError:
+    registrar_auditoria_crear = None
+
 
 # ======================
 # FORMULARIO DE REGISTRO
@@ -79,6 +85,18 @@ def register(request):
                 usuario.password = make_password(raw_password)
                 usuario.rol = rol_cliente
                 usuario.save()
+                
+                # 📝 Registrar creación en auditoría
+                if registrar_auditoria_crear:
+                    try:
+                        registrar_auditoria_crear(
+                            usuario=usuario,
+                            entidad='Usuario (Cliente)',
+                            nombre_objeto=usuario.nombre,
+                            detalles=f'Email: {usuario.email}, Rol: {usuario.rol.nombre}'
+                        )
+                    except Exception as ae:
+                        print(f"Error registrando auditoría de usuario: {ae}")
 
                 # Crear auth.User sincronizado
                 user_auth = User.objects.create_user(username=username_for_auth, email=email, password=raw_password)
