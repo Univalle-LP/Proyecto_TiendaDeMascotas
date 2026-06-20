@@ -5,8 +5,8 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # === Seguridad / Debug (solo dev) ===
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'  # Cambiar a False en producción
+SECRET_KEY = 'django-insecure-kfxcl-@8q4l=r8!c-)rb20w+cp&&8m&suw-$c^1=^fo+ar47)-'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # Activar DEBUG solo cuando la variable de entorno DEBUG sea 'True'
 # En desarrollo permitir hosts locales y 'testserver' para las pruebas con Client()
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost,testserver').split(',')
 
