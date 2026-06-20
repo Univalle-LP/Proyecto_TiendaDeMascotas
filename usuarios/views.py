@@ -20,12 +20,11 @@ from .models import Usuario
 from .forms import UsuarioForm, PasswordChangeForm, ClientePasswordChangeForm
 from .serializers import UsuarioSerializer
 
-# Importar utilidades de auditoría
+# Auditoría
 try:
-    from auditoria.utils import registrar_auditoria_login, registrar_auditoria_error
+    from auditoria.utils import registrar_auditoria_actualizar
 except ImportError:
-    registrar_auditoria_login = None
-    registrar_auditoria_error = None
+    registrar_auditoria_actualizar = None
 
 
 # ======================
@@ -190,6 +189,18 @@ def perfil(request):
                 user_obj.id = usuario.id
             user_obj.save()
 
+            # 📝 Registrar actualización en auditoría
+            if registrar_auditoria_actualizar:
+                try:
+                    registrar_auditoria_actualizar(
+                        usuario=user_obj,
+                        entidad='Usuario',
+                        nombre_objeto=user_obj.nombre,
+                        cambios='Perfil actualizado'
+                    )
+                except Exception as e:
+                    print(f"Error registrando auditoría de perfil: {e}")
+
             # Sincroniza con auth.User
             auth_user = User.objects.filter(email__iexact=request.user.email).first()
             if auth_user:
@@ -291,6 +302,19 @@ def cambiar_contrasena_cliente(request):
                 usuario_custom.save(update_fields=['password', 'actualizado_en'])
             except Usuario.DoesNotExist:
                 pass
+            
+            # 📝 Registrar cambio de contraseña en auditoría
+            if registrar_auditoria_actualizar:
+                try:
+                    usuario_custom = Usuario.objects.get(email__iexact=user.email)
+                    registrar_auditoria_actualizar(
+                        usuario=usuario_custom,
+                        entidad='Usuario',
+                        nombre_objeto=usuario_custom.nombre,
+                        cambios='Contraseña actualizada'
+                    )
+                except Exception as e:
+                    print(f"Error registrando auditoría de cambio de contraseña: {e}")
             
             # 3. Actualizar sesión para no desconectar al usuario
             update_session_auth_hash(request, user)

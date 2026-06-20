@@ -14,6 +14,12 @@ from usuarios.models import Usuario    # Asume que este modelo está definido
 from productos.models import Producto, Categoria  # Asume que estos modelos están definidos
 from ventas.models import VentaDetalle  # Asume que este modelo está definido
 
+# Auditoría
+try:
+    from auditoria.utils import registrar_auditoria_actualizar
+except ImportError:
+    registrar_auditoria_actualizar = None
+
 # Gemini 2.5 imports
 try:
     from google import genai
@@ -407,6 +413,17 @@ def procesar_cola():
         siguiente.estado = 'en_atencion'
         siguiente.inicio_servicio = timezone.now()
         siguiente.save()
+        # 📝 Registrar cambio de estado en auditoría
+        if registrar_auditoria_actualizar:
+            try:
+                registrar_auditoria_actualizar(
+                    usuario=siguiente.usuario,
+                    entidad='Solicitud (Chat)',
+                    nombre_objeto=f'Chat #{siguiente.id}',
+                    cambios='Estado: esperando -> en_atencion'
+                )
+            except Exception as e:
+                logger.error(f"Error registrando auditoría de chat: {e}")
         return siguiente
     return None
 

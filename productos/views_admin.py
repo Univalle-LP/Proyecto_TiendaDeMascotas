@@ -18,6 +18,12 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.contrib.auth.models import Group
 
+# Auditoría
+try:
+    from auditoria.utils import registrar_auditoria_actualizar
+except ImportError:
+    registrar_auditoria_actualizar = None
+
 
 
 # --------- Dashboard ---------
@@ -261,6 +267,19 @@ def producto_update(request, pk):
         form = ProductoForm(request.POST, request.FILES, instance=p)
         if form.is_valid():
             form.save()
+            # 📝 Registrar actualización en auditoría
+            if registrar_auditoria_actualizar:
+                try:
+                    usuario = Usuario.objects.filter(email__iexact=request.user.email).first()
+                    if usuario:
+                        registrar_auditoria_actualizar(
+                            usuario=usuario,
+                            entidad='Producto',
+                            nombre_objeto=p.nombre,
+                            cambios='Producto actualizado'
+                        )
+                except Exception as e:
+                    print(f"Error registrando auditoría de producto: {e}")
             if p.imagen:
                 messages.success(request, f"Producto «{p.nombre}» actualizado. Imagen guardada: {p.imagen.name}")
             else:
@@ -315,6 +334,19 @@ def categoria_update(request, pk):
         form = CategoriaForm(request.POST, instance=c)
         if form.is_valid():
             form.save()
+            # 📝 Registrar actualización en auditoría
+            if registrar_auditoria_actualizar:
+                try:
+                    usuario = Usuario.objects.filter(email__iexact=request.user.email).first()
+                    if usuario:
+                        registrar_auditoria_actualizar(
+                            usuario=usuario,
+                            entidad='Categoría',
+                            nombre_objeto=c.nombre,
+                            cambios='Categoría actualizada'
+                        )
+                except Exception as e:
+                    print(f"Error registrando auditoría de categoría: {e}")
             messages.success(request, "Categoría actualizada.")
             return redirect("panel:categoria_list")
         messages.error(request, "Corrige los errores del formulario.")
