@@ -424,6 +424,17 @@ def procesar_cola():
         siguiente.estado = 'en_atencion'
         siguiente.inicio_servicio = timezone.now()
         siguiente.save()
+        # 📝 Registrar cambio de estado en auditoría
+        if registrar_auditoria_actualizar:
+            try:
+                registrar_auditoria_actualizar(
+                    usuario=siguiente.usuario,
+                    entidad='Solicitud (Chat)',
+                    nombre_objeto=f'Chat #{siguiente.id}',
+                    cambios='Estado: esperando -> en_atencion'
+                )
+            except Exception as e:
+                logger.error(f"Error registrando auditoría de chat: {e}")
         return siguiente
     return None
 
