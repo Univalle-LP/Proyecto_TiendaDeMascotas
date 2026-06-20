@@ -5,10 +5,13 @@ import sys
 from pathlib import Path
 
 # Cargar variables de entorno desde .env
-from dotenv import load_dotenv
-dotenv_path = Path(__file__).resolve().parent / '.env'
-if dotenv_path.exists():
-    load_dotenv(dotenv_path)
+try:
+    from dotenv import load_dotenv
+    dotenv_path = Path(__file__).resolve().parent / '.env'
+    if dotenv_path.exists():
+        load_dotenv(dotenv_path)
+except ImportError:
+    pass
 
 
 def main():
