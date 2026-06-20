@@ -3,8 +3,6 @@ Módulo de utilidades para facilitar el registro de auditoría en el proyecto.
 Proporciona funciones helper para registrar acciones de usuarios.
 """
 from auditoria.models import AuditLog
-from django.contrib.auth.models import User
-from usuarios.models import Usuario
 
 
 def registrar_auditoria(usuario, accion, entidad, descripcion):
@@ -19,17 +17,6 @@ def registrar_auditoria(usuario, accion, entidad, descripcion):
     
     Returns:
         AuditLog: Instancia del registro de auditoría creado
-    
-    Ejemplo:
-        from auditoria.utils import registrar_auditoria
-        
-        # Registrar creación de producto
-        registrar_auditoria(
-            usuario=request.user.usuario,
-            accion='CREATE',
-            entidad='Producto',
-            descripcion='Se creó el producto: Collar para perros'
-        )
     """
     try:
         audit_log = AuditLog.objects.create(
