@@ -87,6 +87,18 @@ def register(request):
                 usuario.password = make_password(raw_password)
                 usuario.rol = rol_cliente
                 usuario.save()
+                
+                # 📝 Registrar creación en auditoría
+                if registrar_auditoria_crear:
+                    try:
+                        registrar_auditoria_crear(
+                            usuario=usuario,
+                            entidad='Usuario (Cliente)',
+                            nombre_objeto=usuario.nombre,
+                            detalles=f'Email: {usuario.email}, Rol: {usuario.rol.nombre}'
+                        )
+                    except Exception as ae:
+                        print(f"Error registrando auditoría de usuario: {ae}")
 
                 # Crear auth.User sincronizado
                 user_auth = User.objects.create_user(username=username_for_auth, email=email, password=raw_password)
@@ -191,6 +203,18 @@ def perfil(request):
                 user_obj.id = usuario.id
             user_obj.save()
 
+            # 📝 Registrar actualización en auditoría
+            if registrar_auditoria_actualizar:
+                try:
+                    registrar_auditoria_actualizar(
+                        usuario=user_obj,
+                        entidad='Usuario',
+                        nombre_objeto=user_obj.nombre,
+                        cambios='Perfil actualizado'
+                    )
+                except Exception as e:
+                    print(f"Error registrando auditoría de perfil: {e}")
+
             # Sincroniza con auth.User
             auth_user = User.objects.filter(email__iexact=request.user.email).first()
             if auth_user:
@@ -292,6 +316,19 @@ def cambiar_contrasena_cliente(request):
                 usuario_custom.save(update_fields=['password', 'actualizado_en'])
             except Usuario.DoesNotExist:
                 pass
+            
+            # 📝 Registrar cambio de contraseña en auditoría
+            if registrar_auditoria_actualizar:
+                try:
+                    usuario_custom = Usuario.objects.get(email__iexact=user.email)
+                    registrar_auditoria_actualizar(
+                        usuario=usuario_custom,
+                        entidad='Usuario',
+                        nombre_objeto=usuario_custom.nombre,
+                        cambios='Contraseña actualizada'
+                    )
+                except Exception as e:
+                    print(f"Error registrando auditoría de cambio de contraseña: {e}")
             
             # 3. Actualizar sesión para no desconectar al usuario
             update_session_auth_hash(request, user)

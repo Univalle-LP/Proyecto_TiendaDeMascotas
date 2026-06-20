@@ -1,5 +1,17 @@
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# === Cargar variables de entorno desde .env ===
+dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
+
+# Cargar variables de entorno desde .env
+from dotenv import load_dotenv
+dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
 
 # === Paths ===
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,7 +90,7 @@ DATABASES = {
         'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.mysql'),
         'NAME': os.environ.get('DB_NAME', 'adonai_store'),
         'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', '123456'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '3306'),
     }
