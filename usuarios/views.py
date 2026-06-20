@@ -12,6 +12,7 @@ from django.conf import settings
 from django.urls import reverse_lazy
 from django import forms
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
 from django.http import JsonResponse
 from django.db import models
 
@@ -45,9 +46,16 @@ class RegistroForm(forms.ModelForm):
         # Si no se proporciona, usar contraseña por defecto
         if not pw and not pw2:
             cleaned['password'] = cleaned['password_confirm'] = 'clientes123'
+            return cleaned
 
-        if cleaned['password'] != cleaned['password_confirm']:
+        if pw != pw2:
             raise forms.ValidationError('Las contraseñas no coinciden.')
+
+        try:
+            validate_password(pw)
+        except forms.ValidationError as e:
+            raise forms.ValidationError(e.messages)
+
         return cleaned
 
 

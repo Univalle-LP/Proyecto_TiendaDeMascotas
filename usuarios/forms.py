@@ -141,6 +141,14 @@ class ClientePasswordChangeForm(forms.Form):
         required=True
     )
 
+    def clean_new_password(self):
+        new_password = self.cleaned_data.get('new_password')
+        try:
+            validate_password(new_password)
+        except ValidationError as e:
+            raise forms.ValidationError(e.messages)
+        return new_password
+
     def clean(self):
         """Verifica que las contraseñas nuevas coincidan."""
         cleaned_data = super().clean()
