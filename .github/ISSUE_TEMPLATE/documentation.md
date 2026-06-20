@@ -43,8 +43,19 @@ El ejemplo no funciona porque...
 2. Cambio 2
 3. Cambio 3
 
-### Contenido nuevo sugerido
-<!-- Si falta contenido, sugiere qué debería incluirse -->
+---
+
+## 🎯 Prioridad
+
+- [ ] 🔴 Alta (Falta información crítica)
+- [ ] 🟡 Media (Mejora importante)
+- [ ] 🟢 Baja (Mejora menor)
+
+---
+
+## 👤 Responsable
+
+<!-- Quién debería actualizar la documentación? -->
 
 ---
 

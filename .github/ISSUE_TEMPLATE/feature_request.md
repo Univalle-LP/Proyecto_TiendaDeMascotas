@@ -46,6 +46,21 @@ assignees: ''
 
 ---
 
+## 🎯 Prioridad
+
+- [ ] 🔴 Crítica (Necesario ahora)
+- [ ] 🟠 Alta (Necesario pronto)
+- [ ] 🟡 Media (Importante)
+- [ ] 🟢 Baja (Nice to have)
+
+---
+
+## 👤 Responsable
+
+<!-- Quién debería trabajar en esto? -->
+
+---
+
 ## 📊 Impacto
 
 ### Campos Afectados
@@ -61,13 +76,6 @@ assignees: ''
 - [ ] Nuevo modelo
 - [ ] Nuevos campos
 - [ ] Nuevas relaciones
-- [ ] Migración necesaria
-
-### Cambios en UI
-<!-- ¿Se necesita cambios visuales? -->
-- [ ] Nuevas páginas
-- [ ] Nuevos formularios
-- [ ] Cambios en layout
 
 ---
 
@@ -83,40 +91,12 @@ assignees: ''
 
 ## 📋 Criterios de Aceptación
 
-<!-- Define cuándo consideraremos que está completada -->
-
 ```
 [ ] Funcionalidad principal implementada
 [ ] Tests unitarios ≥80% coverage
 [ ] Documentación actualizada
 [ ] Sin vulnerabilidades de seguridad
-[ ] Auditoría registra cambios (si aplica)
-[ ] Aprobado por Product Owner
 ```
-
----
-
-## 🎯 Prioridad
-
-- [ ] Crítica (Necesario ahora)
-- [ ] Alta (Necesario pronto)
-- [ ] Media (Importante)
-- [ ] Baja (Nice to have)
-
----
-
-## 📚 Contexto
-
-<!-- Cualquier contexto adicional útil -->
-
-### Wireframe/Mockup
-<!-- Adjunta si tienes diseño -->
-
-### Referencias
-<!-- Links a issues, documentación, etc -->
-- Issue relacionada: #
-- Documento de requisitos: [link]
-- Conversación en Slack: [link]
 
 ---
 
@@ -131,5 +111,4 @@ assignees: ''
 ---
 
 **Complejidad Estimada**: [Pequeña | Media | Grande]  
-**Tiempo Estimado**: [horas/días]  
-**Dependencias**: [Ninguna | Otras features]
+**Componente**: [Usuarios | Productos | Pagos | Chat | Auditoría | Otra]

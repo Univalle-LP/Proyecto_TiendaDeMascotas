@@ -24,15 +24,30 @@ assignees: ''
 
 ---
 
-## 🎯 Comportamiento Esperado
+## 🎯 Resultado Esperado
 
 <!-- Describe qué debería suceder -->
 
 ---
 
-## 😞 Comportamiento Actual
+## 😞 Resultado Actual
 
 <!-- Describe qué está sucediendo realmente -->
+
+---
+
+## 🎯 Prioridad
+
+- [ ] 🔴 Crítica (Bloquea todo)
+- [ ] 🟠 Alta (Urgente)
+- [ ] 🟡 Media (Importante)
+- [ ] 🟢 Baja (Nice to have)
+
+---
+
+## 👤 Responsable
+
+<!-- Quién debería arreglarlo? -->
 
 ---
 
@@ -84,5 +99,4 @@ Pega logs relevantes aquí
 
 ---
 
-**Prioridad**: Por determinar  
-**Severidad**: [Crítico | Alto | Medio | Bajo]
+**Componente**: [Usuarios | Productos | Pagos | Chat | Auditoría | Otra]

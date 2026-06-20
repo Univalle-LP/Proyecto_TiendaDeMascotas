@@ -1,0 +1,17 @@
+# Configuración de Issue Templates para GitHub
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository
+
+blank_issues_enabled: true
+
+contact_links:
+  - name: 💬 Chat del Proyecto
+    url: https://github.com/Univalle-LP/Proyecto_TiendaDeMascotas/discussions
+    about: Usa Discussions para preguntas y conversaciones
+
+  - name: 📚 Documentación
+    url: https://github.com/Univalle-LP/Proyecto_TiendaDeMascotas/tree/main/docs
+    about: Lee la documentación completa del proyecto
+
+  - name: 🔐 Reportar Vulnerabilidad
+    url: https://github.com/Univalle-LP/Proyecto_TiendaDeMascotas/security/advisories
+    about: Reporta vulnerabilidades de seguridad de forma privada
